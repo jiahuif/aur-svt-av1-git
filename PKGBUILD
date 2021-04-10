@@ -2,8 +2,8 @@
 # Contributor: Thomas Schneider <maxmusterm@gmail.com>
 
 pkgname=svt-av1-git
-pkgver=0.8.6.r77.gd5a40d53
-pkgrel=2
+pkgver=0.8.6.r90.gabb32d07
+pkgrel=1
 pkgdesc='Scalable Video Technology AV1 encoder and decoder (git version)'
 arch=('x86_64')
 url='https://gitlab.com/AOMediaCodec/SVT-AV1/'
@@ -20,15 +20,18 @@ pkgver() {
 }
 
 build() {
+    export CC=clang CXX=clang++ AR=llvm-ar AS=llvm-as STRIP=llvm-strip
+    export CFLAGS='-march=native'
+    export CXXFLAGS=$CFLAGS
+    export LDFLAGS="$CFLAGS -fuse-ld=lld"
     export LDFLAGS+=' -Wl,-z,noexecstack'
-    cmake -B build -S SVT-AV1 \
-        -DCMAKE_BUILD_TYPE:STRING='None' \
-        -DCMAKE_INSTALL_PREFIX:PATH='/usr' \
-        -Wno-dev
-    make -C build
+    cd SVT-AV1/Build/linux
+    ./build.sh -p /usr --enable-avx512 --enable-lto
 }
 
 package() {
-    make -C build DESTDIR="$pkgdir" install
+    cd SVT-AV1/Build/linux/Release
+    make DESTDIR="$pkgdir" install
+    cd "$srcdir"
     install -D -m644 SVT-AV1/{LICENSE,PATENTS}.md -t "${pkgdir}/usr/share/licenses/${pkgname}"
 }
